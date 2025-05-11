@@ -18,6 +18,8 @@ class User(Base):
     password_hash = Column(String)
     is_verified = Column(Boolean, default=False)
     verification_code = Column(String)
+    verification_code_created_at = Column(DATETIME)
+
 
 
 class HiddenFile(Base):

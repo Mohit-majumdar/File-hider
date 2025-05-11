@@ -47,10 +47,19 @@ class VerificatinPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-        db = self.controller.db
-        tk.Button(self, text="Resend Email", command= lambda : EmailVerificationService.resend_verification_code(db,self.controller.current_user)).pack(pady=10)
+        
+        tk.Label(self, text="Verification", font=("Arial", 16)).pack(pady=10)
+        tk.Button(self, text="Resend Email", command= self.resend_email).pack(pady=10)
         tk.Button(self, text="Verify email ", command= lambda: controller.show_frame(EnterVerificationCode)).pack(pady=10)
 
+    def resend_email(self):
+        db = self.controller.db
+        user = self.controller.current_user
+        if not user.is_verified:
+            EmailVerificationService.resend_verification_code(db, user.email)
+            messagebox.showinfo("Success", "Verification email resent.")
+        else:
+            messagebox.showinfo("Info", "Email already verified.")
 class EnterVerificationCode(tk.Frame):
     def __init__(self,parent,controller):
         super().__init__(parent)
@@ -64,12 +73,16 @@ class EnterVerificationCode(tk.Frame):
         tk.Button(self,text="verify",command= self.verify).pack(pady=10)
 
     def verify(self):
-        print(self.otp)
-        verifed = EmailVerificationService.verify_email(self.controller.db,self.controller.current_user.email,self.otp)
+        print(self.otp.get())
+        verifed = EmailVerificationService.verify_email(self.controller.db,self.controller.current_user.email,self.otp.get())
         print(verifed)
         if verifed["status"] == "success":
             messagebox.showinfo("Success", "Accont Verified.")
             self.controller.show_frame(DashboardPage)
+        else:
+            messagebox.showerror("Error", verifed["message"])
+            self.controller.show_frame(StartPage)
+        self.controller.show_frame(StartPage)
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)

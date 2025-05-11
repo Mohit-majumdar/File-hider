@@ -23,4 +23,4 @@ RUN mkdir -p /app/uploads /app/hidden
 ENV PYTHONUNBUFFERED=1
 
 # Entry point
-CMD ["python", "app/main.py"]
+CMD ["python", "app/ttk1.py"]

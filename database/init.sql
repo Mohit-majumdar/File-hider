@@ -3,14 +3,14 @@ CREATE DATABASE IF NOT EXISTS file_hider_db;
 USE file_hider_db;
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    username VARCHAR(255),
+    email VARCHAR(255),
+    password_hash VARCHAR(255),
     is_verified BOOLEAN DEFAULT FALSE,
-    verification_code VARCHAR(10),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    verification_code VARCHAR(255),
+    verification_code_created_at DATETIME
 );
 
 -- Hidden files table
