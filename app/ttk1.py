@@ -25,7 +25,7 @@ class FileHiderGUI(tk.Tk):
         self.geometry("500x400")
                                                                                                           
         self.frames = {}
-        for F in (StartPage, LoginPage, SignupPage, DashboardPage):
+        for F in (StartPage, LoginPage, SignupPage, DashboardPage,VerificatinPage,EnterVerificationCode):
             frame = F(parent=self, controller=self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky='nsew')
@@ -43,7 +43,33 @@ class StartPage(tk.Frame):
         tk.Button(self, text="Login", command=lambda: controller.show_frame(LoginPage)).pack(pady=10)
         tk.Button(self, text="Signup", command=lambda: controller.show_frame(SignupPage)).pack(pady=10)
 
+class VerificatinPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        db = self.controller.db
+        tk.Button(self, text="Resend Email", command= lambda : EmailVerificationService.resend_verification_code(db,self.controller.current_user)).pack(pady=10)
+        tk.Button(self, text="Verify email ", command= lambda: controller.show_frame(EnterVerificationCode)).pack(pady=10)
 
+class EnterVerificationCode(tk.Frame):
+    def __init__(self,parent,controller):
+        super().__init__(parent)
+        self.controller = controller
+
+
+        tk.Label(self, text="Verify", font=("Arial", 16)).pack(pady=10)
+        self.otp = tk.Entry(self)
+        self.otp.pack()
+
+        tk.Button(self,text="verify",command= self.verify).pack(pady=10)
+
+    def verify(self):
+        print(self.otp)
+        verifed = EmailVerificationService.verify_email(self.controller.db,self.controller.current_user.email,self.otp)
+        print(verifed)
+        if verifed["status"] == "success":
+            messagebox.showinfo("Success", "Accont Verified.")
+            self.controller.show_frame(DashboardPage)
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -66,10 +92,11 @@ class LoginPage(tk.Frame):
             messagebox.showerror("Error", "Invalid username or password")
             return
         if not user.is_verified:
-            messagebox.showinfo("Info", "Email not verified yet.")
+            self.controller.current_user = user
+            self.controller.show_frame(VerificatinPage)
             return
 
-        self.controller.current_user = user
+        
         self.controller.show_frame(DashboardPage)
 
 
