@@ -1,9 +1,9 @@
 FROM python:3.12
 
 # Install system dependencies
+
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    default-libmysqlclient-dev \
+    python3-tk \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -23,4 +23,4 @@ RUN mkdir -p /app/uploads /app/hidden
 ENV PYTHONUNBUFFERED=1
 
 # Entry point
-CMD ["python", "app/main.py"]
+CMD ["python", "app/ttk1.py"]

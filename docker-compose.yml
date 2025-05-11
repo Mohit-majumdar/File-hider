@@ -7,9 +7,12 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./hidden:/app/hidden
+      - /tmp/.X11-unix:/tmp/.X11-unix     # Share X11 socket
+    
     ports:
       - "5000:5000"
     environment:
+      - DISPLAY=${DISPLAY}  
       - DB_HOST=mysql
       - DB_USER=fileuser
       - DB_PASSWORD=filepassword

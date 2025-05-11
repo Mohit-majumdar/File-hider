@@ -1,0 +1,149 @@
+import os
+import sys
+from tkinter import messagebox, filedialog
+from auth import AuthManager, User                                                                                                             
+from email_verification import EmailVerificationService
+from file_operations import FileHider, HiddenFile
+from config import Config
+
+class FileHiderGUI(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.db = SessionLocal()
+        self.current_user = None
+        self.title("File Hider")
+        self.geometry("500x400")
+
+        self.frames = {}
+        for F in (StartPage, LoginPage, SignupPage, DashboardPage):
+            frame = F(parent=self, controller=self)
+            self.frames[F] = frame
+            frame.grid(row=0, column=0, sticky='nsew')
+
+        self.show_frame(StartPage)
+
+    def show_frame(self, page):
+        self.frames[page].tkraise()
+
+
+class StartPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        tk.Label(self, text="Welcome to File Hider", font=("Arial", 18)).pack(pady=20)
+        tk.Button(self, text="Login", command=lambda: controller.show_frame(LoginPage)).pack(pady=10)
+        tk.Button(self, text="Signup", command=lambda: controller.show_frame(SignupPage)).pack(pady=10)
+
+
+class LoginPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="Login", font=("Arial", 16)).pack(pady=10)
+        self.username = tk.Entry(self)
+        self.password = tk.Entry(self, show="*")
+        self.username.pack()
+        self.password.pack()
+        tk.Button(self, text="Login", command=self.login_user).pack(pady=10)
+
+    def login_user(self):
+        username = self.username.get()
+        password = self.password.get()
+        db = self.controller.db
+
+        user = db.query(User).filter_by(username=username).first()
+        if not user or not AuthManager.verify_password(password, user.password_hash):
+            messagebox.showerror("Error", "Invalid username or password")
+            return
+        if not user.is_verified:
+            messagebox.showinfo("Info", "Email not verified yet.")
+            return
+
+        self.controller.current_user = user
+        self.controller.show_frame(DashboardPage)
+
+
+class SignupPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+
+        tk.Label(self, text="Signup", font=("Arial", 16)).pack(pady=10)
+        self.username = tk.Entry(self)
+        self.email = tk.Entry(self)
+        self.password = tk.Entry(self, show="*")
+        self.confirm_password = tk.Entry(self, show="*")
+
+        for entry, label in zip([self.username, self.email, self.password, self.confirm_password],
+                                ["Username", "Email", "Password", "Confirm Password"]):
+            tk.Label(self, text=label).pack()
+            entry.pack()
+
+        tk.Button(self, text="Signup", command=self.signup_user).pack(pady=10)
+
+    def signup_user(self):
+        username = self.username.get()
+        email = self.email.get()
+        password = self.password.get()
+        confirm = self.confirm_password.get()
+
+        if password != confirm:
+            messagebox.showerror("Error", "Passwords do not match")
+            return
+
+        db = self.controller.db
+        if db.query(User).filter_by(username=username).first():
+            messagebox.showerror("Error", "Username already exists")
+            return
+
+        if not EmailVerificationService.is_valid_email(email):
+            messagebox.showerror("Error", "Invalid email")
+            return
+
+        hashed = AuthManager.hash_password(password)
+        new_user = User(username=username, email=email, password_hash=hashed)
+        db.add(new_user)
+        db.commit()
+
+        EmailVerificationService.initiate_verification(db, new_user)
+        messagebox.showinfo("Success", "Account created. Check email to verify.")
+        self.controller.show_frame(StartPage)
+
+
+class DashboardPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        tk.Label(self, text="Dashboard", font=("Arial", 16)).pack(pady=10)
+        tk.Button(self, text="Hide File", command=self.hide_file).pack(pady=5)
+        tk.Button(self, text="Unhide File", command=self.unhide_file).pack(pady=5)
+        tk.Button(self, text="Logout", command=self.logout).pack(pady=10)
+
+    def hide_file(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            try:
+                user = self.controller.current_user
+                file_hider = FileHider(user_id=user.id, upload_folder=Config.UPLOAD_FOLDER, hidden_folder=Config.HIDDEN_FOLDER)
+                hidden_name = file_hider.hide_file(file_path, self.controller.db)
+                messagebox.showinfo("Success", f"File hidden: {hidden_name}")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+
+    def unhide_file(self):
+        hidden_id = tk.simpledialog.askstring("Unhide File", "Enter Hidden File ID:")
+        try:
+            file_hider = FileHider(user_id=self.controller.current_user.id, upload_folder=Config.UPLOAD_FOLDER, hidden_folder=Config.HIDDEN_FOLDER)
+            restored_path = file_hider.unhide_file(hidden_id, self.controller.db)
+            messagebox.showinfo("Success", f"File unhidden to: {restored_path}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def logout(self):
+        self.controller.current_user = None
+        self.controller.show_frame(StartPage)
+
+
+if __name__ == "__main__":
+    app = FileHiderGUI()
+    app.mainloop()

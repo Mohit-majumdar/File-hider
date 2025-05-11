@@ -1,0 +1,31 @@
+from tkinter import *
+from tkinter import ttk
+root = Tk()
+
+def login():
+    l_root = Tk()
+
+    frm = ttk.Frame(l_root,padding=10)
+    frm.grid()
+    ttk.Label(frm, text="Some table ").grid(column=0, row=0)
+    ttk.Entry(frm,)
+
+
+frm = ttk.Frame(root, padding=10) 
+frm.grid()
+ttk.Label(frm, text="Login").grid(column=0, row=0)
+ttk.Button(frm, text="Login", command=login).grid(column=1, row=0) 
+
+frm = ttk.Frame(root, padding=10) 
+frm.grid()
+ttk.Label(frm, text="Signup").grid(column=0, row=0)
+ttk.Button(frm, text="Signup", command=root.destroy).grid(column=1, row=0) 
+
+frm = ttk.Frame(root, padding=10) 
+frm.grid()
+ttk.Label(frm, text="Exit").grid(column=0, row=0)
+ttk.Button(frm, text="Exit", command=root.destroy).grid(column=1, row=0) 
+
+root.mainloop()
+
+
